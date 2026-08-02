@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.ferdinandkral_coder.twa",
+        "sha256_cert_fingerprints": ["A6:F5:A0:A4:F6:96:5F:67:C4:10:F7:6D:A3:5D:59:40:63:34:91:11:7E:8E:0C:AA:75:4D:1D:41:20:D2:C7:DE"]
+      }
+    }]
