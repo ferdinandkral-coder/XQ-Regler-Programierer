@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1">
+<title>Regler-Programmierung · Piepton-Guide</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0e13;
+    --bg-panel:#121924;
+    --bg-elevated:#1a2432;
+    --line:#26313f;
+    --text:#e7edf3;
+    --muted:#7c8a9c;
+    --amber:#ffb454;   /* kurzer Ton */
+    --amber-dim:#5c4726;
+    --teal:#57e0c9;    /* langer Ton */
+    --brand:#00a0dc;   /* Pichler-Blau, aus dem Original-Logo entnommen */
+    --teal-dim:#1f4a44;
+    --warn:#ff8b6b;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1100px 500px at 15% -10%, #142033 0%, transparent 60%),
+      radial-gradient(900px 500px at 110% 10%, #14282a 0%, transparent 55%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Inter',sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+  .mono{font-family:'JetBrains Mono',monospace;}
+  .disp{font-family:'Space Grotesk',sans-serif;}
+
+  header{
+    padding:28px 20px 18px;
+    border-bottom:1px solid var(--line);
+    position:sticky; top:0; z-index:20;
+    background:rgba(10,14,19,0.88);
+    backdrop-filter:blur(10px);
+  }
+  .eyebrow{
+    font-family:'JetBrains Mono',monospace;
+    font-size:11px; letter-spacing:.14em; text-transform:uppercase;
+    color:var(--brand); margin-bottom:6px;
+  }
+  h1{
+    font-family:'Space Grotesk',sans-serif;
+    font-size:24px; font-weight:700; margin:0 0 4px;
+    letter-spacing:-0.01em; color:var(--brand);
+  }
+  .sub{color:var(--muted); font-size:13.5px; line-height:1.5; max-width:56ch;}
+
+  main{max-width:720px; margin:0 auto; padding:20px 16px 0;}
+
+  /* --- collapsible intro --- */
+  details.intro{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:14px;
+    margin:18px 0; overflow:hidden;
+  }
+  details.intro summary{
+    cursor:pointer; padding:14px 16px; font-weight:600; font-size:14px;
+    display:flex; align-items:center; gap:8px; list-style:none;
+  }
+  details.intro summary::-webkit-details-marker{display:none;}
+  details.intro summary::before{
+    content:'▸'; color:var(--amber); font-size:12px; transition:transform .2s;
+  }
+  details.intro[open] summary::before{transform:rotate(90deg);}
+  .intro-body{padding:0 16px 16px; color:var(--muted); font-size:13.5px; line-height:1.65;}
+  .intro-body b{color:var(--text); font-weight:600;}
+  .intro-body .step{margin:10px 0; padding-left:14px; border-left:2px solid var(--line);}
+
+  /* --- menu grid --- */
+  .menu-label{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); margin:26px 2px 10px;
+  }
+  .grid{display:grid; grid-template-columns:1fr; gap:10px;}
+  @media(min-width:560px){ .grid{grid-template-columns:1fr 1fr;} }
+
+  .card{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:14px;
+    padding:14px 14px 13px; cursor:pointer; text-align:left;
+    display:flex; flex-direction:column; gap:10px;
+    transition:border-color .15s, transform .15s, background .15s;
+  }
+  .card:hover{border-color:#3a4a5c; background:var(--bg-elevated);}
+  .card:active{transform:scale(0.98);}
+  .card-top{display:flex; align-items:center; justify-content:space-between; gap:8px;}
+  .card-idx{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted);
+  }
+  .card-name{font-family:'Space Grotesk',sans-serif; font-size:15px; font-weight:600; line-height:1.3; color:var(--brand);}
+  .card-desc{color:var(--muted); font-size:12px; line-height:1.5; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+
+  /* --- pattern pills --- */
+  .pattern{display:flex; align-items:center; gap:5px; flex-wrap:wrap;}
+  .pip{
+    height:11px; border-radius:6px; flex-shrink:0;
+  }
+  .pip.S{width:11px; background:var(--amber);}
+  .pip.L{width:30px; background:var(--teal);}
+  .pattern.playing .pip{opacity:.35;}
+  .pattern .pip.active{opacity:1 !important; box-shadow:0 0 10px currentColor;}
+
+  .pattern-label{font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--muted); margin-left:2px;}
+
+  /* --- detail view --- */
+  .detail{display:none;}
+  .detail.open{display:block;}
+  .menu-view.hidden{display:none;}
+
+  .back-btn{
+    background:none; border:1px solid var(--line); color:var(--muted);
+    font-family:'JetBrains Mono',monospace; font-size:12px;
+    padding:7px 12px; border-radius:20px; cursor:pointer; margin:18px 0 6px;
+    display:inline-flex; align-items:center; gap:6px;
+  }
+  .back-btn:hover{color:var(--text); border-color:#3a4a5c;}
+
+  .detail-header{margin:14px 0 18px;}
+  .detail-title{font-family:'Space Grotesk',sans-serif; font-size:22px; font-weight:700; color:var(--brand);}
+  .detail-idx{color:var(--brand); font-family:'JetBrains Mono',monospace; font-size:12px;}
+  .detail-desc{color:var(--muted); font-size:13.5px; line-height:1.6; margin-top:8px; max-width:56ch;}
+
+  .panel{
+    background:var(--bg-panel); border:1px solid var(--line); border-radius:16px;
+    padding:18px; margin-bottom:14px;
+  }
+  .panel-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--muted); margin-bottom:12px;
+    display:flex; align-items:center; justify-content:space-between;
+  }
+
+  .player{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
+  .play-btn{
+    background:var(--amber); color:#231607; border:none; border-radius:24px;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;
+    padding:10px 18px; cursor:pointer; display:flex; align-items:center; gap:7px;
+    flex-shrink:0;
+  }
+  .play-btn:hover{filter:brightness(1.08);}
+  .play-btn:disabled{opacity:.5; cursor:default;}
+  .play-btn.mini{
+    background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);
+    padding:5px 10px; font-size:11px; border-radius:16px;
+  }
+
+  .steps{counter-reset:step;}
+  .step-row{
+    display:flex; gap:12px; padding:12px 0; border-top:1px solid var(--line);
+  }
+  .step-row:first-child{border-top:none; padding-top:0;}
+  .step-num{
+    counter-increment:step;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;
+    color:var(--bg); background:var(--teal);
+    width:22px; height:22px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center; flex-shrink:0;
+  }
+  .step-num::before{content: counter(step);}
+  .step-text{font-size:14px; line-height:1.55;}
+  .step-text b{color:var(--amber); font-weight:600;}
+
+  .values{display:flex; flex-direction:column; gap:0;}
+  .value-row{
+    display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:11px 4px; border-top:1px solid var(--line);
+  }
+  .value-row:first-child{border-top:none;}
+  .value-left{display:flex; align-items:center; gap:10px;}
+  .value-name{font-size:14px; font-weight:500;}
+  .value-hint{font-size:11.5px; color:var(--muted); line-height:1.5; margin-top:2px; max-width:34ch;}
+  .badge{
+    font-family:'JetBrains Mono',monospace; font-size:9.5px; letter-spacing:.05em;
+    background:var(--amber-dim); color:var(--amber); border-radius:5px;
+    padding:2px 6px; text-transform:uppercase;
+  }
+
+  .row-title{
+    font-family:'JetBrains Mono',monospace; font-size:11px; color:var(--teal);
+    margin:16px 0 4px; text-transform:uppercase; letter-spacing:.08em;
+  }
+  .row-title:first-child{margin-top:0;}
+
+  .warn-box{
+    background:#241a12; border:1px solid #4a3420; border-radius:12px;
+    padding:12px 14px; font-size:12.5px; color:#f0c090; line-height:1.55; margin-bottom:14px;
+    display:flex; gap:10px;
+  }
+  .warn-box .ico{flex-shrink:0;}
+
+  .exit-note{
+    font-size:12.5px; color:var(--muted); line-height:1.6;
+    background:var(--bg-elevated); border-radius:12px; padding:12px 14px;
+  }
+  .exit-note b{color:var(--text);}
+
+  footer{
+    max-width:720px; margin:30px auto 0; padding:16px; text-align:center;
+    color:var(--muted); font-size:11.5px; font-family:'JetBrains Mono',monospace;
+  }
+
+  /* --- live mode --- */
+  .live-launch{
+    width:100%; margin-top:16px; background:linear-gradient(135deg,#1a2432,#152029);
+    border:1px solid var(--teal-dim); border-radius:14px; padding:14px 16px;
+    color:var(--text); cursor:pointer; text-align:left;
+    display:flex; align-items:center; gap:12px;
+  }
+  .live-launch:hover{border-color:var(--teal);}
+  .live-launch .mic-ico{
+    width:34px; height:34px; border-radius:50%; background:var(--teal-dim);
+    display:flex; align-items:center; justify-content:center; font-size:16px; flex-shrink:0;
+  }
+  .live-launch .lt{font-family:'Space Grotesk',sans-serif; font-weight:600; font-size:14px; color:var(--brand);}
+  .live-launch .ls{color:var(--muted); font-size:12px; margin-top:2px;}
+
+  select.ctx-select{
+    width:100%; background:var(--bg-elevated); color:var(--text); border:1px solid var(--line);
+    border-radius:10px; padding:10px 12px; font-family:'Inter',sans-serif; font-size:13.5px;
+    margin-bottom:12px;
+  }
+
+  .mic-btn{
+    background:var(--teal); color:#052420; border:none; border-radius:24px;
+    font-family:'Space Grotesk',sans-serif; font-weight:700; font-size:13px;
+    padding:11px 20px; cursor:pointer; display:inline-flex; align-items:center; gap:8px;
+  }
+  .mic-btn.stop{background:var(--warn); color:#2a0d02;}
+  .mic-btn:disabled{opacity:.5;}
+
+  .level-wrap{
+    height:8px; background:var(--bg-elevated); border-radius:4px; overflow:hidden;
+    margin-top:14px; border:1px solid var(--line);
+  }
+  .level-fill{height:100%; width:0%; background:linear-gradient(90deg,var(--teal),var(--amber)); transition:width .05s linear;}
+  .level-caption{display:flex; justify-content:space-between; font-size:10.5px; color:var(--muted); margin-top:4px; font-family:'JetBrains Mono',monospace;}
+
+  .live-status{
+    text-align:center; padding:22px 10px; margin:16px 0;
+  }
+  .live-status .buf{min-height:26px; display:flex; justify-content:center; gap:6px; margin-bottom:10px;}
+  .live-status .buf .pip{height:14px;}
+  .live-status .buf .pip.S{width:14px;}
+  .live-status .buf .pip.L{width:38px;}
+  .live-status .match-name{
+    font-family:'Space Grotesk',sans-serif; font-size:19px; font-weight:700; min-height:26px;
+  }
+  .live-status .match-hint{color:var(--muted); font-size:12px; margin-top:4px;}
+
+  /* kompakte Live-Ansicht — weniger Padding/Abstand */
+  #liveView .panel{padding:12px 14px; margin-bottom:10px;}
+  #liveView .panel-title{margin-bottom:8px; font-size:10px;}
+  #liveView .live-status{padding:14px 8px; margin:10px 0;}
+  #liveView .live-status .match-name{font-size:16px; min-height:20px;}
+  #liveView .value-row{padding:6px 2px;}
+  #liveView .value-name{font-size:13px;}
+  #liveView .badge{font-size:8.5px; padding:1px 5px;}
+  #liveView .chip{padding:4px 7px; font-size:10px;}
+  #liveView .candidates{gap:5px;}
+  #liveView .history-item{padding:5px 8px; font-size:11.5px;}
+  #liveView .history-log{gap:4px;}
+  #liveView .level-wrap{margin-top:10px;}
+  #liveView .mic-btn{padding:9px 16px; font-size:12px;}
+
+  .candidates{display:flex; flex-wrap:wrap; gap:7px; margin-top:6px;}
+  .chip{
+    font-family:'JetBrains Mono',monospace; font-size:11px; padding:5px 9px;
+    border-radius:14px; background:var(--bg-elevated); border:1px solid var(--line); color:var(--muted);
+  }
+  .chip.alive{color:var(--amber); border-color:var(--amber-dim);}
+  .chip.hit{background:var(--amber); color:#231607; border-color:var(--amber);}
+
+  .history-log{display:flex; flex-direction:column; gap:6px; margin-top:4px;}
+  .history-item{
+    display:flex; justify-content:space-between; font-size:12.5px; padding:7px 10px;
+    background:var(--bg-elevated); border-radius:8px; color:var(--text);
+  }
+  .history-item span.t{color:var(--muted); font-family:'JetBrains Mono',monospace; font-size:10.5px;}
+
+  details.calib summary{cursor:pointer; color:var(--muted); font-size:12.5px; padding:4px 0; list-style:none;}
+  details.calib summary::-webkit-details-marker{display:none;}
+  details.calib summary::before{content:'▸ '; color:var(--amber);}
+  details.calib[open] summary::before{content:'▾ ';}
+  .calib-row{display:flex; align-items:center; gap:10px; margin:10px 0;}
+  .calib-row label{font-size:12px; color:var(--muted); width:110px; flex-shrink:0;}
+  .calib-row input[type=range]{flex:1;}
+  .calib-btn{
+    background:var(--bg-elevated); border:1px solid var(--line); color:var(--text);
+    border-radius:8px; padding:6px 10px; font-size:11.5px; cursor:pointer;
+  }
+</style>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0e13">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Sender-Programmierung · Regler-Menü</div>
+  <h1>Piepton-Guide</h1>
+  <div class="sub">Funktion wählen — die App zeigt genau, auf welches Signal du warten musst und wann der Gashebel bewegt werden muss.</div>
+</header>
+
+<main>
+
+  <div class="menu-view" id="menuView">
+
+    <details class="intro">
+      <summary>Wie die Programmierung grundsätzlich funktioniert</summary>
+      <div class="intro-body">
+        <div class="step">Nach dem Aufrufen des Programmiermodus spielt der Regler <b>11 Elemente in einer Endlosschleife</b> ab, jedes mit einer eigenen Ton-Signatur (kurze „beep“ = <span style="color:var(--amber)">■</span>, lange „beep—“ = <span style="color:var(--teal)">■■■</span>).</div>
+        <div class="step">Hörst du das Signal für das gewünschte Element, <b>Gashebel innerhalb von 2 Sekunden nach unten</b> bewegen → du rufst dieses Element auf.</div>
+        <div class="step">Im Element selbst wird erneut eine Ton-Sequenz durchlaufen, diesmal für die möglichen Werte. Beim gewünschten Wert wieder <b>innerhalb von 2 Sekunden nach unten</b> → Wert wird gespeichert, ein Bestätigungston folgt.</div>
+        <div class="step">Gashebel <b>oben halten</b> → zurück zur Elemente-Schleife, andere Funktion wählbar. Danach innerhalb von 2 Sekunden nach unten → Programmiermodus wird direkt <b>verlassen</b>.</div>
+      </div>
+    </details>
+
+    <button class="live-launch" id="liveLaunch">
+      <span class="mic-ico">🎤</span>
+      <span>
+        <div class="lt">Live-Erkennung mit Mikrofon</div>
+        <div class="ls">Handy neben den Sender legen — die App hört die Pieptöne mit und zeigt live, welches Element/Wert gerade dran ist.</div>
+      </span>
+    </button>
+
+    <div class="menu-label">11 Funktionen — in Ablaufreihenfolge</div>
+    <div class="grid" id="menuGrid"></div>
+  </div>
+
+  <div class="detail" id="detailView"></div>
+  <div class="detail" id="liveView"></div>
+
+</main>
+
+<footer>PICHLER · Sender-Programmierung — Guide erstellt aus der Original-Anleitung</footer>
+
+<script>
+const ITEMS = [
+  { id:1, name:'SMR Funktion', entry:['S'],
+    desc:'Erlaubt, die Motordrehrichtung über einen 2-Stufen-Schalter am Sender umzukehren — z.B. für Schubumkehr beim Rollen am Boden. Ab Werk AUS. Nur bei Gashebel unter 50% und nur am Boden nutzen, sonst kann der Regler durchbrennen!',
+    values:[ {p:['S'],label:'OFF',def:true}, {p:['S','S'],label:'ON'} ] },
+
+  { id:2, name:'Bremse (Brake Type)', entry:['S','S'],
+    desc:'Legt fest, wie stark der Motor abbremst, sobald der Gashebel auf Null gestellt wird — z.B. damit der Propeller beim Landeanflug schneller steht.',
+    values:[
+      {p:['S'],label:'OFF',def:true},
+      {p:['S','S'],label:'Soft Brake'},
+      {p:['S','S','S'],label:'Mid Brake'},
+      {p:['S','S','S','S'],label:'Hard Brake'}
+    ]},
+
+  { id:3, name:'Timing (Motor Timing)', entry:['S','S','S'],
+    desc:'Stellt den Kommutierungsvorlauf (Zündzeitpunkt) des Reglers ein. Beeinflusst Drehzahl, Wirkungsgrad und Laufruhe des Motors. Höhere Gradzahlen können mehr Drehzahl/Leistung bringen, erzeugen aber auch mehr Wärme — „Auto“ passt sich meist automatisch an den Motor an.',
+    values:[
+      {p:['S'],label:'Auto',def:true},
+      {p:['S','S'],label:'5°'},
+      {p:['S','S','S'],label:'10°'},
+      {p:['S','S','S','S'],label:'15°'},
+      {p:['L'],label:'20°'},
+      {p:['L','S'],label:'25°'},
+      {p:['L','S','S'],label:'30°'}
+    ]},
+
+  { id:4, name:'Motor Rotation', entry:['S','S','S','S'],
+    desc:'Legt die Drehrichtung des Motors fest. Praktisch, wenn Propeller/Getriebe verkehrt herum drehen — spart das Umlöten zweier Motorkabel.',
+    values:[
+      {p:['S'],label:'CW (vorwärts)',def:true},
+      {p:['S','S'],label:'CCW (rückwärts)'}
+    ]},
+
+  { id:5, name:'SR Funktion', entry:['L'],
+    desc:'Synchrongleichrichtung („aktiver Freilauf“): macht den Regler effizienter und reduziert die Wärmeentwicklung im Betrieb.',
+    values:[
+      {p:['S'],label:'ON'},
+      {p:['S','S'],label:'OFF',def:true}
+    ]},
+
+  { id:6, name:'Battery Cells', entry:['L','S'], ambiguous:true,
+    desc:'Anzahl der LiPo-Zellen deines Flugakkus. Bei „Auto“ berechnet der Regler die Zellenzahl automatisch (ca. 3,8V/Zelle). Wichtig als Basis für die Unterspannungsabschaltung, da deren Schwelle pro Zelle gilt. Laut Original-Handbuch hängt der wählbare Zellenbereich vom ESC-Modell/Leistungsklasse ab (z.B. 2–4S bei kleinen, bis 6–14S bei großen HV-Reglern) — die Zeilen unten entsprechen vermutlich unterschiedlichen Leistungsklassen, nicht aufeinanderfolgenden Durchläufen.',
+    rows:[
+      {title:'Zeile A — z. B. kleinere ESC-Modelle', values:[
+        {p:['S','S'],label:'2S'},{p:['S','S','S'],label:'3S'},
+        {p:['S','S','S','S'],label:'4S'},{p:['L'],label:'6S'}
+      ]},
+      {title:'Zeile B — z. B. mittlere ESC-Modelle', values:[
+        {p:['S'],label:'Auto',def:true},{p:['S','S'],label:'3S'},
+        {p:['S','S','S'],label:'4S'},{p:['S','S','S','S'],label:'6S'},{p:['L'],label:'8S'}
+      ]},
+      {title:'Zeile C — z. B. große/HV-ESC-Modelle', values:[
+        {p:['S','S'],label:'6S'},{p:['S','S','S'],label:'8S'},
+        {p:['S','S','S','S'],label:'10S'},{p:['L'],label:'12S'},{p:['L','S'],label:'14S'}
+      ]}
+    ]},
+
+  { id:7, name:'Low Voltage Cutoff Threshold', entry:['L','S','S'],
+    desc:'Spannungsgrenze pro Zelle, unterhalb der die Unterspannungsabschaltung eingreift — schützt den LiPo vor Tiefentladung. Beispiel: 3S-Akku + 3,0V eingestellt → Regler reagiert ab 3 × 3,0V = 9,0V Gesamtspannung.',
+    values:[
+      {p:['S'],label:'OFF'},
+      {p:['S','S'],label:'2.3V'},
+      {p:['S','S','S'],label:'2.5V'},
+      {p:['S','S','S','S'],label:'3.0V',def:true},
+      {p:['L'],label:'3.2V'},
+      {p:['L','S'],label:'3.4V'},
+      {p:['L','S','S'],label:'3.6V'}
+    ]},
+
+  { id:8, name:'Low Voltage Cutoff Type', entry:['L','S','S','S'],
+    desc:'Bestimmt, was beim Erreichen der Unterspannungsschwelle passiert.',
+    values:[
+      {p:['S'],label:'Reduce Power',def:true,hint:'Leistung wird auf ca. 70% reduziert — sanfter Übergang, meist noch genug Reserve zum Landen.'},
+      {p:['S','S'],label:'Cut off Power',hint:'Leistung wird sofort komplett abgeschaltet — schützt den Akku maximal, aber ohne Vorwarnung im Flug.'}
+    ]},
+
+  { id:9, name:'BEC Voltage', entry:['L','S','S','S','S'], ambiguous:true,
+    desc:'Ausgangsspannung der eingebauten Empfängerstromversorgung (BEC) — versorgt Empfänger und Servos. 5V ist der Standard für die meisten Analog-/Digitalservos, höhere Spannungen (6V/7.4V/8.4V) für schnellere/stärkere Servos, die dafür ausgelegt sind. Laut Original-Handbuch bieten kleinere ESC-Modelle 5V/6V/7.4V an, größere Modelle 6V/7.4V/8.4V — es ist immer nur eine Zeile passend zu deinem Reglertyp relevant, nicht beide nacheinander.',
+    rows:[
+      {title:'Reihe für kleinere ESC-Modelle', values:[
+        {p:['S'],label:'5V',def:true},{p:['S','S'],label:'6V'},{p:['S','S','S'],label:'7.4V'}
+      ]},
+      {title:'Reihe für größere ESC-Modelle', values:[
+        {p:['S'],label:'6V',def:true},{p:['S','S'],label:'7.4V'},{p:['S','S','S'],label:'8.4V'}
+      ]}
+    ]},
+
+  { id:10, name:'Acceleration', entry:['L','L'],
+    desc:'Bestimmt, wie direkt der Motor auf Gasänderungen reagiert. „Soft“ sorgt für einen sanfteren Hochlauf — schont z.B. Getriebe und Antriebsstrang und reduziert den Startruck.',
+    values:[
+      {p:['S'],label:'Normal',def:true},
+      {p:['S','S'],label:'Soft'}
+    ],
+    extra:{
+      title:'Start-up Power (ggf. 2. Auswahlschritt danach)',
+      desc:'Wie viel Leistung der Motor beim Losbrechen/Anlaufen einsetzt — höher bedeutet kräftigeren, aber ruckartigeren Start.',
+      values:[
+        {p:['S'],label:'Low'},
+        {p:['S','S'],label:'Mid',def:true},
+        {p:['S','S','S'],label:'High'}
+      ]
+    }},
+
+  { id:11, name:'Restore Factory Setup Defaults', entry:['L','L','S'], restoreOnly:true,
+    desc:'Setzt alle Programmierpunkte auf die Werkseinstellungen zurück (die mit „Standard“ markierten Werte in dieser Übersicht).' }
+];
+
+const menuGrid = document.getElementById('menuGrid');
+const menuView = document.getElementById('menuView');
+const detailView = document.getElementById('detailView');
+
+function patternHTML(pattern, size){
+  size = size || '';
+  return '<div class="pattern ' + size + '">' +
+    pattern.map(function(t){ return '<div class="pip ' + t + '"></div>'; }).join('') +
+    '</div>';
+}
+function patternText(pattern){
+  return pattern.map(function(t){ return t==='S' ? 'kurz' : 'lang'; }).join(' + ');
+}
+
+ITEMS.forEach(function(item){
+  const card = document.createElement('button');
+  card.className = 'card';
+  card.innerHTML =
+    '<div class="card-top">' +
+      '<span class="card-idx">Element ' + item.id + ' / 11</span>' +
+    '</div>' +
+    '<div class="card-name">' + item.name + '</div>' +
+    '<div class="card-desc">' + (item.desc || '') + '</div>' +
+    patternHTML(item.entry) +
+    '<div class="pattern-label">' + patternText(item.entry) + '</div>';
+  card.addEventListener('click', function(){ openDetail(item.id); });
+  menuGrid.appendChild(card);
+});
+
+// --- Web Audio beep player ---
+let actx = null;
+function ctx(){
+  if(!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  return actx;
+}
+function beep(startTime, durationMs, freq){
+  const c = ctx();
+  const osc = c.createOscillator();
+  const gain = c.createGain();
+  osc.frequency.value = freq;
+  osc.type = 'sine';
+  gain.gain.setValueAtTime(0, startTime);
+  gain.gain.linearRampToValueAtTime(0.28, startTime + 0.01);
+  gain.gain.setValueAtTime(0.28, startTime + durationMs/1000 - 0.015);
+  gain.gain.linearRampToValueAtTime(0, startTime + durationMs/1000);
+  osc.connect(gain).connect(c.destination);
+  osc.start(startTime);
+  osc.stop(startTime + durationMs/1000 + 0.02);
+}
+const SHORT_MS = 150, LONG_MS = 500, GAP_MS = 180;
+
+function playPattern(pattern, containerEl, btnEl){
+  const c = ctx();
+  if(c.state === 'suspended') c.resume();
+  const pips = containerEl.querySelectorAll('.pip');
+  containerEl.classList.add('playing');
+  if(btnEl) btnEl.disabled = true;
+
+  let t = c.currentTime + 0.05;
+  let totalMs = 0;
+  pattern.forEach(function(tone, i){
+    const dur = tone === 'S' ? SHORT_MS : LONG_MS;
+    beep(t, dur, 1500);
+    const delay = totalMs;
+    setTimeout(function(){
+      pips.forEach(function(p){ p.classList.remove('active'); });
+      pips[i].classList.add('active');
+    }, delay);
+    t += dur/1000 + GAP_MS/1000;
+    totalMs += dur + GAP_MS;
+  });
+  setTimeout(function(){
+    pips.forEach(function(p){ p.classList.remove('active'); });
+    containerEl.classList.remove('playing');
+    if(btnEl) btnEl.disabled = false;
+  }, totalMs + 50);
+}
+
+function valueRow(v){
+  const pid = 'p' + Math.random().toString(36).slice(2,9);
+  return '<div class="value-row">' +
+      '<div class="value-left">' +
+        '<div>' +
+          '<div><span class="value-name">' + v.label + '</span> ' +
+          (v.def ? '<span class="badge">Standard</span>' : '') + '</div>' +
+          (v.hint ? '<div class="value-hint">' + v.hint + '</div>' : '') +
+        '</div>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span id="' + pid + '">' + patternHTML(v.p) + '</span>' +
+        '<button class="play-btn mini" data-play="' + pid + '" data-pattern=\'' + JSON.stringify(v.p) + '\'>▶</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function openDetail(id){
+  const item = ITEMS.find(function(i){ return i.id === id; });
+  const mainPid = 'main-' + item.id;
+
+  let html = '<button class="back-btn" id="backBtn">‹ Zur Funktionsliste</button>';
+  html += '<div class="detail-header">';
+  html += '<div class="detail-idx">Element ' + item.id + ' von 11</div>';
+  html += '<div class="detail-title">' + item.name + '</div>';
+  if(item.desc){ html += '<div class="detail-desc">' + item.desc + '</div>'; }
+  html += '</div>';
+
+  if(item.ambiguous){
+    html += '<div class="warn-box"><span class="ico">⚠</span><span>Diese Werte-Tabelle war im Original-PDF nicht eindeutig strukturiert (verschachtelte Zellen). Laut Original-Handbuch des ESC-Herstellers hängt der verfügbare Wertebereich vom jeweiligen ESC-Modell/der Leistungsklasse ab — nur eine der Zeilen unten passt zu deinem konkreten Regler. Bitte beim ersten Mal am Regler per Gehör gegenprüfen.</span></div>';
+  }
+
+  // Step 1+2: entry
+  html += '<div class="panel">';
+  html += '<div class="panel-title">Schritt 1 · Element aufrufen</div>';
+  html += '<div class="player">';
+  html += '<button class="play-btn" id="playEntry">▶ Signal abspielen</button>';
+  html += '<span id="' + mainPid + '">' + patternHTML(item.entry) + '</span>';
+  html += '<span class="pattern-label">' + patternText(item.entry) + '</span>';
+  html += '</div></div>';
+
+  html += '<div class="panel"><div class="steps">';
+  html += '<div class="step-row"><div class="step-num"></div><div class="step-text">Warte im Programmiermodus, bis du dieses Signal hörst: <b>' + item.name + '</b> (' + patternText(item.entry) + ').</div></div>';
+  html += '<div class="step-row"><div class="step-num"></div><div class="step-text">Innerhalb von <b>2 Sekunden</b> nach dem Signal Gashebel <b>ganz nach unten</b> bewegen → Element wird aufgerufen.</div></div>';
+  html += '</div></div>';
+
+  if(item.restoreOnly){
+    html += '<div class="panel"><div class="panel-title">Schritt 2 · Bestätigen</div>';
+    html += '<div class="step-text" style="font-size:14px;line-height:1.6;">Dieses Element hat keine Werteauswahl — nach dem Aufrufen einfach den Gashebel erneut kurz nach unten bewegen, um den Werksreset zu bestätigen. Ein Bestätigungston folgt.</div></div>';
+  } else if(item.rows){
+    item.rows.forEach(function(row){
+      html += '<div class="row-title">' + row.title + '</div>';
+      html += '<div class="panel" style="padding-top:6px;"><div class="values">';
+      row.values.forEach(function(v){ html += valueRow(v); });
+      html += '</div></div>';
+    });
+    html += stepHint();
+  } else {
+    html += '<div class="panel"><div class="panel-title">Schritt 2 · Wert wählen</div><div class="values">';
+    item.values.forEach(function(v){ html += valueRow(v); });
+    html += '</div></div>';
+    html += stepHint();
+  }
+
+  if(item.extra){
+    html += '<div class="warn-box"><span class="ico">ℹ</span><span>Laut Tabelle folgt danach vermutlich ein zweiter Auswahlschritt: <b>' + item.extra.title + '</b>. ' + (item.extra.desc || '') + ' Gleiches Prinzip — beim gewünschten Signal Gashebel nach unten.</span></div>';
+    html += '<div class="panel"><div class="panel-title">' + item.extra.title + '</div><div class="values">';
+    item.extra.values.forEach(function(v){ html += valueRow(v); });
+    html += '</div></div>';
+  }
+
+  html += '<div class="exit-note"><b>Abbrechen / andere Funktion:</b> Gashebel oben halten → zurück zur Elemente-Schleife. <b>Menü verlassen:</b> danach innerhalb von 2 Sekunden nach unten → Programmiermodus wird direkt verlassen.</div>';
+
+  detailView.innerHTML = html;
+  detailView.classList.add('open');
+  menuView.classList.add('hidden');
+  window.scrollTo(0,0);
+
+  document.getElementById('backBtn').addEventListener('click', function(){
+    detailView.classList.remove('open');
+    menuView.classList.remove('hidden');
+    window.scrollTo(0,0);
+  });
+  document.getElementById('playEntry').addEventListener('click', function(e){
+    playPattern(item.entry, document.getElementById(mainPid), e.currentTarget);
+  });
+  detailView.querySelectorAll('[data-play]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const pid = btn.getAttribute('data-play');
+      const pattern = JSON.parse(btn.getAttribute('data-pattern'));
+      playPattern(pattern, document.getElementById(pid), btn);
+    });
+  });
+}
+
+function stepHint(){
+  return '<div class="exit-note" style="margin-bottom:14px;">Beim gewünschten Wert-Signal Gashebel innerhalb von <b>2 Sekunden nach unten</b> → Wert wird gespeichert, Bestätigungston folgt.</div>';
+}
+
+/* ================= LIVE MIKROFON-ERKENNUNG ================= */
+
+function buildCandidates(mode){
+  if(mode === 'top'){
+    return ITEMS.map(function(it){ return {label: it.name, pattern: it.entry}; });
+  }
+  const item = ITEMS.find(function(i){ return i.id === Number(mode); });
+  if(!item) return [];
+  let list = [];
+  if(item.values) item.values.forEach(function(v){ list.push({label:v.label + (v.def?' (Standard)':''), pattern:v.p}); });
+  if(item.rows) item.rows.forEach(function(row){
+    row.values.forEach(function(v){ list.push({label: row.title + ': ' + v.label + (v.def?' (Standard)':''), pattern:v.p}); });
+  });
+  if(item.extra) item.extra.values.forEach(function(v){ list.push({label: item.extra.title + ': ' + v.label + (v.def?' (Standard)':''), pattern:v.p}); });
+  if(item.restoreOnly) list.push({label:'Bestätigen (Restore)', pattern:item.entry});
+  return list;
+}
+
+function patternsEqual(a,b){
+  return a.length === b.length && a.every(function(t,i){ return t === b[i]; });
+}
+function isPrefix(buf, pattern){
+  if(buf.length > pattern.length) return false;
+  return buf.every(function(t,i){ return t === pattern[i]; });
+}
+
+const Live = {
+  stream:null, actx:null, analyser:null, data:null, raf:null,
+  running:false,
+  toneOn:false, toneStart:0, aboveCount:0, belowCount:0,
+  lastToneEnd:0,
+  buffer:[],
+  noiseFloor:0.01,
+  threshold:0.035,
+  shortMax:320,   // ms — bis hierhin gilt ein Ton als "kurz"
+  gapEnd:900,     // ms Stille => Sequenz abgeschlossen
+  candidates:[],
+  history:[]
+};
+
+function liveRender(){
+  const el = document.getElementById('liveView');
+  let html = '<button class="back-btn" id="liveBack">‹ Zur Funktionsliste</button>';
+  html += '<div class="detail-header"><div class="detail-idx">Live-Erkennung</div><div class="detail-title">Mikrofon-Modus</div></div>';
+
+  html += '<div class="warn-box"><span class="ico">⚠</span><span>Näherungslösung: erkennt Tonlänge über das Handymikrofon. Funktioniert am besten in ruhiger Umgebung mit dem Handy nah am Senderlautsprecher. Bei Fehlerkennung unten kalibrieren.</span></div>';
+
+  html += '<div class="panel">';
+  html += '<div class="panel-title">Kontext</div>';
+  html += '<select class="ctx-select" id="ctxSelect">';
+  html += '<option value="top">Hauptmenü — welches der 11 Elemente läuft gerade</option>';
+  ITEMS.forEach(function(it){
+    html += '<option value="' + it.id + '">Im Element: ' + it.name + ' — welcher Wert läuft gerade</option>';
+  });
+  html += '</select>';
+  html += '<button class="mic-btn" id="micToggle">🎤 Mikrofon starten</button>';
+  html += '<div class="level-wrap"><div class="level-fill" id="levelFill"></div></div>';
+  html += '<div class="level-caption"><span>Pegel</span><span id="levelTxt">—</span></div>';
+  html += '</div>';
+
+  html += '<div class="panel live-status">';
+  html += '<div class="buf" id="liveBuf"></div>';
+  html += '<div class="match-name" id="liveMatch">Warte auf Signal…</div>';
+  html += '<div class="match-hint" id="liveHint">Mikrofon starten, dann läuft die Erkennung automatisch mit.</div>';
+  html += '</div>';
+
+  html += '<div class="panel panel-tight"><div class="panel-title">Als Nächstes in der Reihenfolge</div><div class="values" id="liveNextWrap"><div style="color:var(--muted);font-size:12px;padding:5px 4px;">Wird angezeigt, sobald ein Signal eindeutig erkannt wurde.</div></div></div>';
+
+  html += '<div class="panel panel-tight"><div class="panel-title">Mögliche Kandidaten</div><div class="candidates" id="liveCandidates"></div></div>';
+
+  html += '<div class="panel panel-tight"><div class="panel-title">Verlauf</div><div class="history-log" id="liveHistory"><div class="history-item" style="color:var(--muted);">noch nichts erkannt</div></div></div>';
+
+  html += '<div class="panel">';
+  html += '<details class="calib"><summary>Erweitert / Kalibrierung</summary>';
+  html += '<div class="calib-row"><label>Empfindlichkeit</label><input type="range" id="threshSlider" min="0.01" max="0.15" step="0.005" value="' + Live.threshold + '"><span id="threshVal" class="mono" style="font-size:11px;">' + Live.threshold + '</span></div>';
+  html += '<div class="calib-row"><label>Kurz/Lang-Grenze</label><input type="range" id="shortSlider" min="150" max="500" step="10" value="' + Live.shortMax + '"><span id="shortVal" class="mono" style="font-size:11px;">' + Live.shortMax + ' ms</span></div>';
+  html += '<button class="calib-btn" id="recalNoise">Umgebungslautstärke neu messen</button>';
+  html += '</details></div>';
+
+  el.innerHTML = html;
+
+  el.querySelector('#liveBack').addEventListener('click', function(){
+    stopLive();
+    el.classList.remove('open');
+    menuView.classList.remove('hidden');
+    detailView.classList.remove('open');
+    window.scrollTo(0,0);
+  });
+  el.querySelector('#ctxSelect').addEventListener('change', function(e){
+    Live.candidates = buildCandidates(e.target.value);
+    Live.buffer = [];
+    renderCandidates();
+    renderBuf();
+    const wrap = document.getElementById('liveNextWrap');
+    if(wrap) wrap.innerHTML = '<div style="color:var(--muted);font-size:12.5px;padding:8px 4px;">Wird angezeigt, sobald ein Signal eindeutig erkannt wurde.</div>';
+    const matchEl = document.getElementById('liveMatch');
+    if(matchEl){ matchEl.textContent = 'Warte auf Signal…'; matchEl.style.color = 'var(--text)'; }
+  });
+  el.querySelector('#micToggle').addEventListener('click', toggleMic);
+  el.querySelector('#threshSlider').addEventListener('input', function(e){
+    Live.threshold = parseFloat(e.target.value);
+    el.querySelector('#threshVal').textContent = Live.threshold.toFixed(3);
+  });
+  el.querySelector('#shortSlider').addEventListener('input', function(e){
+    Live.shortMax = parseInt(e.target.value,10);
+    el.querySelector('#shortVal').textContent = Live.shortMax + ' ms';
+  });
+  el.querySelector('#recalNoise').addEventListener('click', calibrateNoise);
+
+  Live.candidates = buildCandidates('top');
+  renderCandidates();
+}
+
+function renderCandidates(){
+  const wrap = document.getElementById('liveCandidates');
+  if(!wrap) return;
+  wrap.innerHTML = Live.candidates.map(function(c){
+    let cls = 'chip';
+    if(Live.buffer.length){
+      if(isPrefix(Live.buffer, c.pattern)) cls += ' alive';
+      if(patternsEqual(Live.buffer, c.pattern)) cls += ' hit';
+    }
+    return '<span class="' + cls + '">' + c.label + '</span>';
+  }).join('');
+}
+
+function renderBuf(){
+  const bufEl = document.getElementById('liveBuf');
+  if(!bufEl) return;
+  bufEl.innerHTML = Live.buffer.map(function(t){ return '<div class="pip ' + t + '"></div>'; }).join('') || '<span style="color:var(--muted);font-size:12px;">–</span>';
+}
+
+async function toggleMic(){
+  if(Live.running){ stopLive(); return; }
+  const btn = document.getElementById('micToggle');
+  const hintEl = document.getElementById('liveHint');
+
+  if(!window.isSecureContext || !navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+    hintEl.innerHTML = '⚠ Mikrofon nicht verfügbar: Diese Seite läuft nicht über <b>https://</b> oder <b>localhost</b> (aktuell: ' + location.protocol + '). Browser erlauben Mikrofonzugriff nur in einem sicheren Kontext. Datei per lokalem HTTP-Server öffnen, z.B. <span class="mono">python3 -m http.server</span> und dann <span class="mono">http://localhost:8000/...</span> aufrufen — nicht direkt als Datei/content:// öffnen.';
+    return;
+  }
+
+  try{
+    Live.stream = await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:false, noiseSuppression:false, autoGainControl:false}});
+  }catch(err){
+    if(err.name === 'NotAllowedError'){
+      hintEl.textContent = 'Mikrofonzugriff wurde verweigert. Bitte in den Chrome-Website-Einstellungen (Schloss-/Info-Symbol in der Adressleiste → Berechtigungen → Mikrofon) erlauben und erneut versuchen.';
+    } else if(err.name === 'NotFoundError'){
+      hintEl.textContent = 'Kein Mikrofon gefunden.';
+    } else {
+      hintEl.textContent = 'Mikrofonzugriff nicht möglich (' + err.name + ': ' + err.message + ').';
+    }
+    return;
+  }
+  Live.actx = new (window.AudioContext || window.webkitAudioContext)();
+  const source = Live.actx.createMediaStreamSource(Live.stream);
+  Live.analyser = Live.actx.createAnalyser();
+  Live.analyser.fftSize = 1024;
+  Live.data = new Float32Array(Live.analyser.fftSize);
+  source.connect(Live.analyser);
+
+  Live.running = true;
+  btn.textContent = '■ Mikrofon stoppen';
+  btn.classList.add('stop');
+  document.getElementById('liveHint').textContent = 'Höre zu…';
+  await calibrateNoise();
+  Live.toneOn = false; Live.aboveCount=0; Live.belowCount=0; Live.buffer=[]; Live.lastToneEnd=performance.now();
+  liveLoop();
+}
+
+function stopLive(){
+  if(Live.raf) cancelAnimationFrame(Live.raf);
+  if(Live.stream) Live.stream.getTracks().forEach(function(t){ t.stop(); });
+  if(Live.actx) Live.actx.close();
+  Live.running = false;
+  const btn = document.getElementById('micToggle');
+  if(btn){ btn.textContent = '🎤 Mikrofon starten'; btn.classList.remove('stop'); }
+  const hint = document.getElementById('liveHint');
+  if(hint) hint.textContent = 'Mikrofon gestoppt.';
+}
+
+async function calibrateNoise(){
+  if(!Live.analyser){ return; }
+  const hint = document.getElementById('liveHint');
+  if(hint) hint.textContent = 'Kalibriere Umgebungslautstärke — kurz still sein…';
+  const samples = [];
+  const dur = 600;
+  const start = performance.now();
+  await new Promise(function(resolve){
+    function sample(){
+      Live.analyser.getFloatTimeDomainData(Live.data);
+      samples.push(rms(Live.data));
+      if(performance.now() - start < dur) requestAnimationFrame(sample);
+      else resolve();
+    }
+    sample();
+  });
+  const avg = samples.reduce(function(a,b){return a+b;},0) / samples.length;
+  Live.noiseFloor = avg;
+  Live.threshold = Math.max(0.015, avg * 3.5);
+  const slider = document.getElementById('threshSlider');
+  const val = document.getElementById('threshVal');
+  if(slider){ slider.value = Live.threshold; }
+  if(val){ val.textContent = Live.threshold.toFixed(3); }
+  if(hint) hint.textContent = 'Kalibriert. Höre zu…';
+}
+
+function rms(arr){
+  let sum = 0;
+  for(let i=0;i<arr.length;i++) sum += arr[i]*arr[i];
+  return Math.sqrt(sum/arr.length);
+}
+
+function liveLoop(){
+  if(!Live.running) return;
+  Live.analyser.getFloatTimeDomainData(Live.data);
+  const level = rms(Live.data);
+  const now = performance.now();
+
+  const fill = document.getElementById('levelFill');
+  const txt = document.getElementById('levelTxt');
+  if(fill){ fill.style.width = Math.min(100, (level / (Live.threshold*2)) * 100) + '%'; }
+  if(txt){ txt.textContent = level > Live.threshold ? 'Ton' : 'Stille'; }
+
+  if(level > Live.threshold){
+    Live.aboveCount++; Live.belowCount = 0;
+    if(!Live.toneOn && Live.aboveCount > 2){
+      Live.toneOn = true; Live.toneStart = now;
+    }
+  } else {
+    Live.belowCount++; Live.aboveCount = 0;
+    if(Live.toneOn && Live.belowCount > 2){
+      Live.toneOn = false;
+      const dur = now - Live.toneStart;
+      const tone = dur < Live.shortMax ? 'S' : 'L';
+      Live.buffer.push(tone);
+      Live.lastToneEnd = now;
+      renderBuf();
+      renderCandidates();
+      evaluateMatch(false);
+    }
+  }
+
+  if(!Live.toneOn && Live.buffer.length && (now - Live.lastToneEnd) > Live.gapEnd){
+    evaluateMatch(true);
+    Live.buffer = [];
+    renderBuf();
+    renderCandidates();
+  }
+
+  Live.raf = requestAnimationFrame(liveLoop);
+}
+
+function evaluateMatch(sequenceComplete){
+  const matchEl = document.getElementById('liveMatch');
+  const hintEl = document.getElementById('liveHint');
+  if(!matchEl) return;
+  if(!Live.buffer.length) return;
+
+  const exact = Live.candidates.filter(function(c){ return patternsEqual(Live.buffer, c.pattern); });
+  const alive = Live.candidates.filter(function(c){ return isPrefix(Live.buffer, c.pattern); });
+
+  if(exact.length === 1 && (sequenceComplete || alive.length === 1)){
+    matchEl.textContent = '→ ' + exact[0].label;
+    matchEl.style.color = 'var(--amber)';
+    hintEl.textContent = 'Erkannt. Wenn das gewünscht ist: jetzt Gashebel nach unten (innerhalb 2 Sek).';
+    pushHistory(exact[0].label);
+    renderNext(exact[0]);
+  } else if(alive.length >= 1){
+    matchEl.textContent = alive.length + ' mögliche Treffer …';
+    matchEl.style.color = 'var(--text)';
+    hintEl.textContent = 'Noch am Zählen — Signal läuft weiter.';
+  } else {
+    matchEl.textContent = 'Kein passendes Signal erkannt';
+    matchEl.style.color = 'var(--warn)';
+    hintEl.textContent = 'Passt zu keinem Kandidaten in diesem Kontext — evtl. falscher Kontext gewählt oder Hintergrundgeräusch.';
+  }
+}
+
+function nextRow(c, orderLabel){
+  const pid = 'n' + Math.random().toString(36).slice(2,9);
+  return '<div class="value-row">' +
+      '<div class="value-left">' +
+        '<span class="badge" style="background:var(--bg-elevated); color:var(--brand); border:1px solid var(--line);">' + orderLabel + '</span>' +
+        '<span class="value-name">' + c.label + '</span>' +
+      '</div>' +
+      '<div style="display:flex;align-items:center;gap:10px;">' +
+        '<span id="' + pid + '">' + patternHTML(c.pattern) + '</span>' +
+        '<button class="play-btn mini" data-play="' + pid + '" data-pattern=\'' + JSON.stringify(c.pattern) + '\'>▶</button>' +
+      '</div>' +
+    '</div>';
+}
+
+function bindPlayButtons(container){
+  if(!container) return;
+  container.querySelectorAll('[data-play]').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      const pid = btn.getAttribute('data-play');
+      const pattern = JSON.parse(btn.getAttribute('data-pattern'));
+      playPattern(pattern, document.getElementById(pid), btn);
+    });
+  });
+}
+
+function renderNext(current){
+  const wrap = document.getElementById('liveNextWrap');
+  if(!wrap) return;
+  const idx = Live.candidates.indexOf(current);
+  if(idx === -1 || Live.candidates.length < 2){
+    wrap.innerHTML = '<div style="color:var(--muted);font-size:12.5px;padding:8px 4px;">Keine weiteren Elemente in diesem Kontext.</div>';
+    return;
+  }
+  const n1 = Live.candidates[(idx + 1) % Live.candidates.length];
+  const n2 = Live.candidates[(idx + 2) % Live.candidates.length];
+  wrap.innerHTML = nextRow(n1, 'als Nächstes') + (Live.candidates.length > 2 ? nextRow(n2, 'danach') : '');
+  bindPlayButtons(wrap);
+}
+
+function pushHistory(label){
+  const now = new Date();
+  const t = now.toLocaleTimeString('de-DE', {hour:'2-digit',minute:'2-digit',second:'2-digit'});
+  Live.history.unshift({label:label, t:t});
+  Live.history = Live.history.slice(0,6);
+  const box = document.getElementById('liveHistory');
+  if(box){
+    box.innerHTML = Live.history.map(function(h){
+      return '<div class="history-item"><span>' + h.label + '</span><span class="t">' + h.t + '</span></div>';
+    }).join('');
+  }
+}
+
+document.getElementById('liveLaunch').addEventListener('click', function(){
+  liveRender();
+  document.getElementById('liveView').classList.add('open');
+  menuView.classList.add('hidden');
+  window.scrollTo(0,0);
+});
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('service-worker.js').catch(function(err){
+      console.warn('Service Worker Registrierung fehlgeschlagen:', err);
+    });
+  });
+}
+</script>
+</body>
+</html>
